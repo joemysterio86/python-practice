@@ -19,7 +19,7 @@ def fruitLoop(arg):
         print(x + dot)
 
 fruitLoop(fruitList)
-
+# just a quick note
 
 
 
