@@ -1,25 +1,21 @@
-import os, time
+import os, time, datetime
 import sqlite3
-# from PyQt5 import uic
-# from PyQt5 import QtSql
-# from PyQt5.QtWidgets import (QMainWindow, QTableView, QApplication, QAbstractItemView)
-# from PyQt5.QtCore import Qt
 
-# Form, Window = uic.loadUiType("test.ui")
+dateToday = datetime.date.today()
 
-DEFAULT_PATH = os.path.join(os.path.dirname(__file__), 'sql-test.db')
-def db_connect(db_path=DEFAULT_PATH):
-    con = sqlite3.connect(db_path)
+defaultPath = os.path.join(os.path.dirname(__file__), 'sql-test.db')
+def dbConnect(dbPath=defaultPath):
+    con = sqlite3.connect(dbPath)
     return con
 
-con = db_connect()
+con = dbConnect()
 cur = con.cursor()
 
 # dropTable1 = """DROP TABLE sqlite_sequence;"""
 # dropTable2 = """DROP TABLE lineitems;"""
 # cur.execute(dropTable1)
 # cur.execute(dropTable2)
-bills_table = cur.execute("SELECT sql FROM sqlite_master WHERE type='table';").fetchall()[0]
+# bills_table = cur.execute("SELECT sql FROM sqlite_master WHERE type='table';").fetchall()[0]
 
 billsTableCreate = """
 CREATE TABLE IF NOT EXISTS bills (
@@ -53,13 +49,13 @@ cur.execute(incomeTableCreate)
 #     print(cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='bills';").fetchall())
 
 
-def create_bills(con, bill_name, base_amount_due, actual_amount_due, due_date):
+def createBill(con, bill_name, base_amount_due, actual_amount_due, due_date):
     sql = "insert into bills (bill_name, base_amount_due, actual_amount_due, due_date) values (?, ?, ?, ?)"
     cur.execute(sql, (bill_name, base_amount_due, actual_amount_due, due_date))
     con.commit()
     return cur.lastrowid
 
-def create_income(con, user, income_amount, pay_day_start, pay_day_frequency):
+def createIncome(con, user, income_amount, pay_day_start, pay_day_frequency):
     sql = "insert into income (user, income_amount, pay_day_start, pay_day_frequency) values (?, ?, ?, ?)"
     cur.execute(sql, (user, income_amount, pay_day_start, pay_day_frequency))
     con.commit()
@@ -77,9 +73,9 @@ def menu():
     Please press a number 1-4 to choose.
 
     """)
-    choice = input("Enter a number: ")
+    choice = input("Please select an option: ")
     if choice.lower() == "q":
-        print("You selected 5, exiting...")
+        print("You selected Q, exiting...")
         exit()
     elif choice == "1":
         cur.execute("SELECT bill_name, base_amount_due, actual_amount_due, due_date FROM bills")
@@ -90,23 +86,34 @@ def menu():
         input("\n\nPress ENTER key to continue to main menu.")
         menu()
     elif choice == "2":
-        print(cur.execute("SELECT id, bill_name, base_amount_due, actual_amount_due, due_date FROM bills").fetchall())
-        time.sleep(.5)
+        cur.execute("SELECT user, income_amount, pay_day_start, pay_day_frequency FROM income")
+        formatted_result = [f"{user:<15}{income_amount:<16}{pay_day_start:<16}{pay_day_frequency:<15}" for user, income_amount, pay_day_start, pay_day_frequency in cur.fetchall()]
+        user, income_amount, pay_day_start, pay_day_frequency = "User", "Payday Amount", "Payday Start", "Payday Frequency"
+        print("\n\nYour Bills:\n")
+        print('\n'.join([f"{user:<15}{income_amount:<16}{pay_day_start:<16}{pay_day_frequency:<15}"] + formatted_result))
+        input("\n\nPress ENTER key to continue to main menu.")
         menu()
     elif choice == "3":
-        bill1 = input("Please enter the bill name: ")
+        bill1 = input("\nPlease enter the bill name: ")
         bill2 = float(input("Please enter what is normally due: "))
         bill3 = float(input("Please enter what you will pay: "))
         bill4 = input("Please enter the bill due date (YYYY-MM-DD): ")
         time.sleep(.5)
         print("Thanks, creating this bill...")
-        create_bills(con, bill1, bill2, bill3, bill4)
+        createBill(con, bill1, bill2, bill3, bill4)
         print("Bill created!! Taking you back to main menu.")
         time.sleep(1.5)
         menu()
     elif choice == "4":
-        print("You entered 4!")
+        income1 = input("\nPlease enter who this income belongs to: ")
+        income2 = float(input("Please enter paycheck amount: "))
+        income3 = input("Please enter next expected pay date (YYYY-MM-DD): ")
+        income4 = input("Please indicate if pay schedule is biweekly, bimonthly, or monthly: ")
         time.sleep(.5)
+        print("Thanks, adding income to the database...")
+        createIncome(con, income1, income2, income3, income4)
+        print("Income added!! Taking you back to main menu.")
+        time.sleep(1.5)
         menu()
     else:
         print("PLEASE!!! Select an appropriate option!")
@@ -114,64 +121,3 @@ def menu():
         menu()
 
 menu()
-
-
-
-# create_product(con, 'Something About Something', 99.99)
-
-# cur.execute("delete from products where id=6")
-# con.commit()
-
-
-# print(cur.execute("""select price
-# from products
-# where id=5""").fetchone()[0])
-
-# print(cur.execute("""select price
-# from products
-# where id=4""").fetchone()[0])
-
-# print(price1)
-# print(price2)
-
-# book = cur.fetchall()[0][1]
-
-# app = QApplication([])
-# app.setStyleSheet("QPushButton { margin: 10ex; }")
-# button = QPushButton('Click to see value!')
-# def on_button_clicked():
-#     alert = QMessageBox()
-#     alert.setText(book)
-#     alert.exec_()
-# button.clicked.connect(on_button_clicked)
-# button.show()
-# app.exec_()
-
-# app = QApplication([])
-# app.setStyleSheet("QMessageBox { margin: 10ex; }")
-# msgbox = QMessageBox(QMessageBox.Information, 'A Thing!', book)
-# msgbox.show()
-# app.exec_()
-
-
-# def load_initial_data(self):
-#     # where cur is the cursor
-#     self.cur.execute("select * from products")
-#     rows = self.cur.fetchall()[0][1]
-
-#     for row in rows:
-#         inx = rows.index(row)
-#         self.tableView.insertRow(inx)
-#         # add more if there is more columns in the database.
-#         # self.tableWidget_2.setItem(inx, 0, QTableWidgetItem(row[1]))
-#         # self.tableWidget_2.setItem(inx, 1, QTableWidgetItem(row[2]))
-#         # self.tableWidget_2.setItem(inx, 2, QTableWidgetItem(row[3]))
-
-
-
-# app = QApplication([])
-# window = Window()
-# form = Form()
-# form.setupUi(window)
-# window.show()
-# app.exec_()
