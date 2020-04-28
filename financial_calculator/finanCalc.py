@@ -64,7 +64,11 @@ def createIncome(con, user, income_amount, pay_day_start, pay_day_frequency):
 
 
 def menu():
-    print("""What would you like to do?
+    print(f"""
+Today's date is: {dateToday}
+    
+What would you like to do?
+
     1) View your bills.
     2) View your income.
     3) Add a bill.
