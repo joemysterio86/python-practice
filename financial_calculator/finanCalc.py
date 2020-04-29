@@ -1,8 +1,16 @@
 # The start of my app.
-import os, time, datetime
-import sqlite3
+import os, time, datetime, calendar, sqlite3
+from dateutil import rrule
+import recurrent
 
-dateToday = datetime.date.today()
+dateToday = datetime.datetime.today()
+# r = recurrent.RecurringEvent(now_date=dateToday)
+# r = recurrent.RecurringEvent(now_date=datetime.datetime(2020,1,1))
+# r.parse('every other friday starting now until january 2050')
+# rr = rrule.rrulestr(r.get_RFC_rrule())
+# rr.after(datetime.datetime(2020,4,38)
+# cal = calendar.Calendar(firstweekday=6)
+
 
 defaultPath = os.path.join(os.path.dirname(__file__), 'finanCalc.db')
 def dbConnect(dbPath=defaultPath):
@@ -62,10 +70,15 @@ def createIncome(con, user, income_amount, pay_day_start, pay_day_frequency):
     con.commit()
     return cur.lastrowid
 
+def nextBill():
+    # cur.execute("select bill_name, base_amount_due from bills where date(due_date) = (select min(date(due_date)) from bills where date(due_date) > date(\"now\"));")
+    cur.execute("select bill_name, base_amount_due from bills where date(due_date) = (select min(date(due_date)) from bills where date(due_date) > date(\"2020-05-02\"));")
+    return cur.fetchone()
 
 def menu():
     print(f"""
-Today's date is: {dateToday}
+Today's date is: {dateToday.date()}
+Your next bill is {nextBill()[0].upper()} for the amount of {nextBill()[1]}
     
 What would you like to do?
 
@@ -83,7 +96,7 @@ What would you like to do?
         print("You selected Q, exiting...")
         exit()
     elif choice == "1":
-        cur.execute("SELECT bill_name, base_amount_due, actual_amount_due, due_date FROM bills")
+        print(cur.execute("SELECT bill_name, base_amount_due, actual_amount_due, due_date FROM bills ORDER BY due_date;"))
         formatted_result = [f"{bill_name:<20}{base_amount_due:<14}{actual_amount_due:<14}{due_date:<15}" for bill_name, base_amount_due, actual_amount_due, due_date in cur.fetchall()]
         bill_name, base_amount_due, actual_amount_due, due_date = "Bill", "Monthly Due", "Current Due", "Due Date"
         print("\n\nYour Bills:\n")
@@ -91,7 +104,7 @@ What would you like to do?
         input("\n\nPress ENTER key to continue to main menu.")
         menu()
     elif choice == "2":
-        cur.execute("SELECT user, income_amount, pay_day_start, pay_day_frequency FROM income")
+        cur.execute("SELECT user, income_amount, DATE(pay_day_start), pay_day_frequency FROM income ORDER BY DATE(pay_day_start);")
         formatted_result = [f"{user:<15}{income_amount:<16}{pay_day_start:<16}{pay_day_frequency:<15}" for user, income_amount, pay_day_start, pay_day_frequency in cur.fetchall()]
         user, income_amount, pay_day_start, pay_day_frequency = "User", "Payday Amount", "Payday Start", "Payday Frequency"
         print("\n\nYour Bills:\n")
@@ -112,11 +125,12 @@ What would you like to do?
     elif choice == "4":
         income1 = input("\nPlease enter who this income belongs to: ")
         income2 = float(input("Please enter paycheck amount: "))
-        income3 = input("Please enter next expected pay date (YYYY-MM-DD): ")
+        income3a = input("Please enter next expected pay date (ex: 2020-01-01) : ")
+        income3b = datetime.datetime.strptime(income3a + " 0:0:0.000000", "%Y-%m-%d %H:%M:%S.%f")
         income4 = input("Please indicate if pay schedule is biweekly, bimonthly, or monthly: ")
         time.sleep(.5)
         print("Thanks, adding income to the database...")
-        createIncome(con, income1, income2, income3, income4)
+        createIncome(con, income1, income2, income3b, income4)
         print("Income added!! Taking you back to main menu.")
         time.sleep(1.5)
         menu()
@@ -124,5 +138,7 @@ What would you like to do?
         print("PLEASE!!! Select an appropriate option!")
         time.sleep(1)
         menu()
+
+
 
 menu()
